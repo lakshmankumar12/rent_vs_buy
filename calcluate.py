@@ -17,8 +17,6 @@ def fl_fmt(f):
     except:
         return "%.2f"%f
 
-
-
 def rlinput(prompt, prefill=''):
     '''
         Use readline and get user input
@@ -78,7 +76,6 @@ def ask_inputs():
                 [ "maint",       "Maintenance:"                           , "1"      ,    0.1 ,    10.0 ,  0  ] ,
                 [ "own_ins",     "Owner Insurance:"                       , "0.46"   ,    0.1 ,    10.0 ,  0  ] ,
                 [ "month_comm",  "Monthly Common:"                        , "500"    ,      0 ,    5000 ,  1  ] ,
-                [ "rent_dep",    "Rental Deposit:"                        , "0.27"   ,      0 ,     0.5 ,  0  ] ,
                 [ "rent_ins",    "Renter Insurane:"                       , "0.5"    ,    0.1 ,    10.0 ,  0  ] ,
             ]
     given_inputs = {}
@@ -194,6 +191,7 @@ if inp['how_long'] > 3:
         print("Cap-Gains Loss:%s"%(fl_fmt(gains_loss)))
         value_at_end -= gains_loss
 
+
 property_taxes = extrapolate_values_on_a_base(inp['home_val'],inp['price_appr'],inp['how_long'],inp['prop_tax'])
 maintenances   = extrapolate_values_on_a_base(inp['home_val'],inp['price_appr'],inp['how_long'],inp['maint'])
 owner_insur    = extrapolate_values_on_a_base(inp['home_val'],inp['price_appr'],inp['how_long'],inp['own_ins'])
@@ -212,6 +210,7 @@ if inp['joint'] == "yes":
     tax_exception = 12600
 
 buyer_year_expense = []
+buyer_oppur_cost = 0.0
 for i in range(inp['how_long']):
     exp = maintenances[i][1]
     exp += monthly_common_expenses[i][1]
@@ -222,43 +221,51 @@ for i in range(inp['how_long']):
         tax_save = (mort_plus_prop - tax_exception) * (inp['marg_rate']/100.0)
         exp -= tax_save
     buyer_year_expense.append(exp)
+    years_left = inp['how_long'] - i
+    buyer_oppur_cost += compound_interest(exp, years_left, inp['inv_rate'])
 
 
-print("every situation:")
+print("Buyer situation:")
 for i in range(inp['how_long']):
-    print("year %d,  property_taxes: %s maintenances: %s monthly_common_expenses: %s  net_yearly: %s"%(
-                i,fl_fmt(property_taxes[i][1]),fl_fmt(maintenances[i][1]),fl_fmt(monthly_common_expenses[i][1]),fl_fmt(buyer_year_expense[i])))
-print("Final value end of %d years is %s"%(inp['how_long'], fl_fmt(value_at_end)))
+    if (i < inp['mort_term']):
+        mort_val = mortgate_pmt * 12
+    else:
+        mort_val = 0.0
+    print("year %d,  property_taxes: %s maintenances: %s monthly_common_expenses: %s  mortgage: %s net_yearly: %s"%(
+                i,fl_fmt(property_taxes[i][1]),fl_fmt(maintenances[i][1]),fl_fmt(monthly_common_expenses[i][1]),fl_fmt(mort_val), fl_fmt(buyer_year_expense[i])))
+
 
 buy_loss = inp['home_val'] * (inp['buy_loss']/100.0)
 initial_buy_expense = downpay_value + buy_loss
 print("Initial Buy Expense %s"%fl_fmt(initial_buy_expense))
 
-# Rental ase.
+buyer_oppur_cost += compound_interest(initial_buy_expense, inp['how_long'], inp['inv_rate'])
+buyer_net_oppurtuinty = buyer_oppur_cost - value_at_end
+
+print("oppurtunity_cost_for_buyer: %s"%fl_fmt(buyer_oppur_cost))
+print("Final value end of %d years is %s"%(inp['how_long'], fl_fmt(value_at_end)))
+print("Net for buyer:%s"%fl_fmt(buyer_net_oppurtuinty))
+
+
+# Rental case.
 rent_guess = inp['home_val']/250.0
-rental_values = extrapolate_values(rent_guess,inp['how_long'],inp['rent_appr'])
-renter_insur =  extrapolate_values_on_a_base(rent_guess, inp['rent_appr'],inp['how_long'],inp['rent_ins'])
+rental_values = extrapolate_values(rent_guess*12,inp['how_long'],inp['rent_appr'])
+renter_insur =  extrapolate_values_on_a_base(rent_guess*12, inp['rent_appr'],inp['how_long'],inp['rent_ins'])
 
-#first year
-first_year_exp = rental_value[0][1] + renter_insur[0][1]
-first_year_invest = initial_buy_expense - first_year_exp
-investment_history = []
-investment_history.append(rental_values[0][0], first_year_invest)
-available_kitty = 0
-for i in range(1,inp['how_long']):
-    available_kitty *= (1 + inp['inv_rate']/100.0)
-    # what is the expense for this eyar
+renter_oppurtunity_cost = 0.0
+renter_year_expense = []
+for i in range(inp['how_long']):
     renter_exp_for_this_year = rental_values[i][1] + renter_insur[i][1]
-    buyer_exp_for_this_year = buyer_year_expense[i][1]
-    if buyer_exp_for_this_year > renter_exp_for_this_year:
-        #great. Just subtract that and put that as investment.
-        inv_val = buyer_exp_for_this_year - renter_exp_for_this_year
-        investment_history.append(rental_values[i][0], inv_val)
-    else:
-        needed_val = renter_exp_for_this_year - buyer_exp_for_this_year
-        #grr. we need to break our kitty to fund our expense.
-        lost_value = update_invest_history(investment_history, this year, needed_val)
-        available_kitty -= lost_value
-available_kitty *= (1 + inp['inv_rate']/100.0)
+    renter_year_expense.append(renter_exp_for_this_year)
+    years_left = inp['how_long'] - i
+    renter_oppurtunity_cost += compound_interest(renter_exp_for_this_year, years_left, inp['inv_rate'])
 
-print("available_kitty is %s"%(fl_fmt(available_kitty)))
+print("Renter situation:")
+for i in range(inp['how_long']):
+    print("year %d,  rent: %s rent_insur: %s net_yearly: %s"%(
+                i,fl_fmt(rental_values[i][1]),fl_fmt(renter_insur[i][1]), fl_fmt(renter_year_expense[i])))
+
+print("oppurtunity_cost_for_renter at guess_rent:%s is: %s"%(fl_fmt(rent_guess),fl_fmt(renter_oppurtunity_cost)))
+
+
+# print("available_kitty is %s"%(fl_fmt(available_kitty)))
