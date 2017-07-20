@@ -167,6 +167,28 @@ def update_invest_history(investment_history, needed_val, inv_rate, tax_rate):
         raise Exception("Couldn't guess")
     return guess-1
 
+def get_a_renter_oppurtunity_cost(rent_guess, how_long, rent_appr, rent_ins):
+    rental_values = extrapolate_values(rent_guess*12,how_long,rent_appr)
+    renter_insur =  extrapolate_values_on_a_base(rent_guess*12, rent_appr,how_long,rent_ins)
+
+    renter_oppurtunity_cost = 0.0
+    renter_year_expense = []
+    for i in range(inp['how_long']):
+        renter_exp_for_this_year = rental_values[i][1] + renter_insur[i][1]
+        renter_year_expense.append(renter_exp_for_this_year)
+        years_left = inp['how_long'] - i
+        renter_oppurtunity_cost += compound_interest(renter_exp_for_this_year, years_left, inp['inv_rate'])
+
+    # print("Renter situation:")
+    # for i in range(inp['how_long']):
+        # print("year %d,  rent: %s rent_insur: %s net_yearly: %s"%(
+                    # i,fl_fmt(rental_values[i][1]),fl_fmt(renter_insur[i][1]), fl_fmt(renter_year_expense[i])))
+
+    # print("oppurtunity_cost_for_renter at guess_rent:%s is: %s"%(fl_fmt(rent_guess),fl_fmt(renter_oppurtunity_cost)))
+
+    return renter_oppurtunity_cost
+
+
 
 inp = ask_inputs()
 print("got inputs\n%s"%inp)
@@ -247,25 +269,31 @@ print("Final value end of %d years is %s"%(inp['how_long'], fl_fmt(value_at_end)
 print("Net for buyer:%s"%fl_fmt(buyer_net_oppurtuinty))
 
 
-# Rental case.
-rent_guess = inp['home_val']/250.0
-rental_values = extrapolate_values(rent_guess*12,inp['how_long'],inp['rent_appr'])
-renter_insur =  extrapolate_values_on_a_base(rent_guess*12, inp['rent_appr'],inp['how_long'],inp['rent_ins'])
+residual = 10000
+rent_initial_guess = inp['home_val']/250.0
+rent_guess = rent_initial_guess
+epsilon = 1.0
+limit = 10000
+lower_bound = None
+upper_bound = None
+while abs(residual) > epsilon and limit > 0:
+    limit -= 1
+    renter_oppurtunity_cost = get_a_renter_oppurtunity_cost(rent_guess,inp['how_long'],inp['rent_appr'],inp['rent_ins'])
+    residual = buyer_net_oppurtuinty - renter_oppurtunity_cost
+    if abs(residual) > epsilon:
+        #print("left:%d, Took a guess of %s, and rent_cost:%s , diff: %s"%(limit, fl_fmt(rent_guess), fl_fmt(renter_oppurtunity_cost), fl_fmt(residual)))
+        if residual > 0:
+            lower_bound = rent_guess
+            if not upper_bound:
+                rent_guess += 100
+                continue
+        else:
+            upper_bound = rent_guess
+            if not lower_bound:
+                rent_guess -= 100
+                continue
+        rent_guess = (upper_bound + lower_bound)/2.0
+if limit <= 0:
+    raise Exception("Couldn't guess")
 
-renter_oppurtunity_cost = 0.0
-renter_year_expense = []
-for i in range(inp['how_long']):
-    renter_exp_for_this_year = rental_values[i][1] + renter_insur[i][1]
-    renter_year_expense.append(renter_exp_for_this_year)
-    years_left = inp['how_long'] - i
-    renter_oppurtunity_cost += compound_interest(renter_exp_for_this_year, years_left, inp['inv_rate'])
-
-print("Renter situation:")
-for i in range(inp['how_long']):
-    print("year %d,  rent: %s rent_insur: %s net_yearly: %s"%(
-                i,fl_fmt(rental_values[i][1]),fl_fmt(renter_insur[i][1]), fl_fmt(renter_year_expense[i])))
-
-print("oppurtunity_cost_for_renter at guess_rent:%s is: %s"%(fl_fmt(rent_guess),fl_fmt(renter_oppurtunity_cost)))
-
-
-# print("available_kitty is %s"%(fl_fmt(available_kitty)))
+print ("Start renting if rent value is less than %s"%fl_fmt(rent_guess))
