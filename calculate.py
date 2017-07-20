@@ -12,6 +12,11 @@ import argparse
 import sys
 
 pretty = True
+set_verbose_level = 1
+
+def log_print(verbose_level, format_str, tuple_of_args=()):
+    if set_verbose_level >= verbose_level:
+        print(format_str%tuple_of_args)
 
 def fl_fmt(f):
     try:
@@ -66,6 +71,7 @@ def parse_command_line_inputs():
     for i in inputs:
         parser.add_argument("--" + i[0], dest=i[0], help=i[1], default=i[2])
     parser.add_argument("--nopretty", action="store_true")
+    parser.add_argument("-l", "--log_level", type=int)
 
     parsed_args = parser.parse_args()
     failed = False
@@ -89,6 +95,11 @@ def parse_command_line_inputs():
     global pretty
     if parsed_args.nopretty:
         pretty = False;
+    global set_verbose_level
+    if parsed_args.log_level != None:
+        set_verbose_level = parsed_args.log_level
+        if set_verbose_level == 0:
+            pretty = False
 
     return given_inputs
 
@@ -167,26 +178,27 @@ def get_a_renter_oppurtunity_cost(rent_guess, how_long, rent_appr, rent_ins):
         years_left = inp['how_long'] - i
         renter_oppurtunity_cost += compound_interest(renter_exp_for_this_year, years_left, inp['inv_rate'])
 
-    # print("Renter situation:")
-    # for i in range(inp['how_long']):
-        # print("year %d,  rent: %s rent_insur: %s net_yearly: %s"%(
-                    # i,fl_fmt(rental_values[i][1]),fl_fmt(renter_insur[i][1]), fl_fmt(renter_year_expense[i])))
+    log_print(5,"Renter situation:")
+    if set_verbose_level >= 5:
+        for i in range(inp['how_long']):
+            log_print(5,"year %d,  rent: %s rent_insur: %s net_yearly: %s",
+                    (i,fl_fmt(rental_values[i][1]),fl_fmt(renter_insur[i][1]), fl_fmt(renter_year_expense[i])))
 
-    # print("oppurtunity_cost_for_renter at guess_rent:%s is: %s"%(fl_fmt(rent_guess),fl_fmt(renter_oppurtunity_cost)))
+    log_print(5, "oppurtunity_cost_for_renter at guess_rent:%s is: %s",
+                    (fl_fmt(rent_guess),fl_fmt(renter_oppurtunity_cost)))
 
     return renter_oppurtunity_cost
 
 
-
 inp = parse_command_line_inputs()
-print("got inputs\n%s"%inp)
+log_print(1,"Inputs\n%s"%inp)
 
 #Find value of home at end of period
 value_at_end = compound_interest(inp['home_val'], inp['how_long'], inp['price_appr'])
-#print("Home value at end of %d years is %s"%(inp['how_long'], fl_fmt(value_at_end)))
+log_print(3,"Home value at end of %d years is %s"%(inp['how_long'], fl_fmt(value_at_end)))
 
 sale_loss = value_at_end * (inp['sell_loss']/100.0)
-#print("Sale-loss:%s"%(fl_fmt(sale_loss)))
+log_print(3,"Sale-loss:%s"%(fl_fmt(sale_loss)))
 value_at_end -= sale_loss
 
 gains = value_at_end - inp['home_val']
@@ -198,7 +210,7 @@ if inp['how_long'] > 3:
     gains -= deduct
     if gains > 0:
         gains_loss = gains / inp['marg_rate']
-        #print("Cap-Gains Loss:%s"%(fl_fmt(gains_loss)))
+        log_print(3,"Cap-Gains Loss:%s"%(fl_fmt(gains_loss)))
         value_at_end -= gains_loss
 
 monthly_mortgage_rate = inp['mort_per'] / 1200.0
@@ -206,12 +218,12 @@ no_mortgage_months    = inp['mort_term'] * 12
 downpay_value         = inp['home_val'] * (inp['down_pay']/100.0)
 mortgage_value        = (inp['home_val'] - downpay_value) * -1
 mortgate_pmt          = numpy.pmt(monthly_mortgage_rate, no_mortgage_months, mortgage_value)
-#print("Mortgage value is %s"%fl_fmt(mortgate_pmt))
+log_print(3,"Mortgage value is %s"%fl_fmt(mortgate_pmt))
 
 if inp['how_long'] < inp['mort_term']:
     rem = inp['mort_term'] - inp['how_long']
     rem_prin = principal_remaining_after(mortgage_value, inp['mort_term'], inp['mort_per'], rem)
-    #print("Remaining Principal to Pay:%s"%(fl_fmt(rem_prin)))
+    log_print(3,"Remaining Principal to Pay:%s"%(fl_fmt(rem_prin)))
     value_at_end -= rem_prin
 
 
@@ -242,26 +254,26 @@ for i in range(inp['how_long']):
     buyer_oppur_cost += compound_interest(exp, years_left, inp['inv_rate'])
 
 
-#print("Buyer situation:")
+log_print(4,"Buyer situation:")
 for i in range(inp['how_long']):
     if (i < inp['mort_term']):
         mort_val = mortgate_pmt * 12
     else:
         mort_val = 0.0
-    #print("year %d,  property_taxes: %s maintenances: %s monthly_common_expenses: %s  mortgage: %s net_yearly: %s"%(
-                #i,fl_fmt(property_taxes[i][1]),fl_fmt(maintenances[i][1]),fl_fmt(monthly_common_expenses[i][1]),fl_fmt(mort_val), fl_fmt(buyer_year_expense[i])))
+    log_print(4,"year %d,  property_taxes: %s maintenances: %s monthly_common_expenses: %s  mortgage: %s net_yearly: %s",
+                    (i,fl_fmt(property_taxes[i][1]),fl_fmt(maintenances[i][1]),fl_fmt(monthly_common_expenses[i][1]),fl_fmt(mort_val), fl_fmt(buyer_year_expense[i])))
 
 
 buy_loss = inp['home_val'] * (inp['buy_loss']/100.0)
 initial_buy_expense = downpay_value + buy_loss
-print("Initial Buy Expense %s"%fl_fmt(initial_buy_expense))
+log_print(2,"Initial Buy Expense %s"%fl_fmt(initial_buy_expense))
 
 buyer_oppur_cost += compound_interest(initial_buy_expense, inp['how_long'], inp['inv_rate'])
 buyer_net_oppurtuinty = buyer_oppur_cost - value_at_end
 
-print("oppurtunity_cost_for_buyer: %s"%fl_fmt(buyer_oppur_cost))
-print("Final value end of %d years is %s"%(inp['how_long'], fl_fmt(value_at_end)))
-print("Net for buyer:%s"%fl_fmt(buyer_net_oppurtuinty))
+log_print(2,"oppurtunity_cost_for_buyer: %s"%fl_fmt(buyer_oppur_cost))
+log_print(2,"Final value end of %d years is %s"%(inp['how_long'], fl_fmt(value_at_end)))
+log_print(2,"Net for buyer:%s"%fl_fmt(buyer_net_oppurtuinty))
 
 
 residual = 10000
@@ -276,7 +288,7 @@ while abs(residual) > epsilon and limit > 0:
     renter_oppurtunity_cost = get_a_renter_oppurtunity_cost(rent_guess,inp['how_long'],inp['rent_appr'],inp['rent_ins'])
     residual = buyer_net_oppurtuinty - renter_oppurtunity_cost
     if abs(residual) > epsilon:
-        #print("left:%d, Took a guess of %s, and rent_cost:%s , diff: %s"%(limit, fl_fmt(rent_guess), fl_fmt(renter_oppurtunity_cost), fl_fmt(residual)))
+        log_print(4,"left:%d, Took a guess of %s, and rent_cost:%s , diff: %s"%(limit, fl_fmt(rent_guess), fl_fmt(renter_oppurtunity_cost), fl_fmt(residual)))
         if residual > 0:
             lower_bound = rent_guess
             if not upper_bound:
@@ -291,4 +303,5 @@ while abs(residual) > epsilon and limit > 0:
 if limit <= 0:
     raise Exception("Couldn't guess")
 
-print ("Start renting if rent value is less than %s"%fl_fmt(rent_guess))
+log_print (1,"Start renting if rent value is less than:")
+print("%s"%fl_fmt(rent_guess))
