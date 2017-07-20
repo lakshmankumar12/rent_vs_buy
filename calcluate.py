@@ -136,32 +136,6 @@ def extrapolate_values_on_a_base(base, base_inc_rate, years, rate_on_base):
         result.append((date_i, value_i))
     return result
 
-def update_invest_history(investment_history, needed_val, inv_rate, tax_rate):
-    '''
-        We have investment history in the form of list of
-            (date, investment), with 0 values in case none was invested/available in the year.
-        needed_val is what we need
-    '''
-    residual = 1
-    step = 0.05
-    guess = 0.05
-    epsilon = 0.0001
-    limit = 10000
-    while abs(residual) > epsilon and limit > 0:
-        limit -= 1
-        residual = 0.0
-        for i, ta in enumerate(transactions):
-            residual += ta[1] / pow(guess, years[i])
-        if abs(residual) > epsilon:
-            if residual > 0:
-                guess += step
-            else:
-                guess -= step
-                step /= 2.0
-    if limit <= 0:
-        raise Exception("Couldn't guess")
-    return guess-1
-
 def get_a_renter_oppurtunity_cost(rent_guess, how_long, rent_appr, rent_ins):
     rental_values = extrapolate_values(rent_guess*12,how_long,rent_appr)
     renter_insur =  extrapolate_values_on_a_base(rent_guess*12, rent_appr,how_long,rent_ins)

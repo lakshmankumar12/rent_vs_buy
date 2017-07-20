@@ -51,3 +51,26 @@ Breakeven Rent for 900000 is 2,826.22
 Breakeven Rent for 1000000 is 3,081.45
 $
 ```
+
+# How are the calculations done
+
+This is my implementation after a best effort (read, unreliable) understanding
+of what the web-page does.
+
+We get all inputs. We take the buyer-case first. Buyer spends some initial
+values (buying costs, down-payment) and spends over the period (mortgage costs,
+maintenance costs). These costs are inflation adjusted to their
+amounts. These are then considered invested from that point till end of period.
+These expenses are the oppurtunity_ cost for the buyer. At the end of period,
+buyer is assumed to sell the house. After discounting all
+sale-losses(capital gains, sale-payments), we discount this cost from the
+oppurtunity_ cost. This is the net oppurtunity_ cost the buyer incurs by
+buying the house.
+
+We then take a rental-guess, and assuming this rental guess, do the same
+oppurtunity_ cost calculation for the renter. The renter's expenses are his
+rents and other payments. We then try to match the renter's oppurtunity_ cost
+to the seller's oppurtunity_ cost. If the renter's cost exceeds, we decrese
+rent, if its lesser, we increase rent, thus honing in to the break even value.
+
+
