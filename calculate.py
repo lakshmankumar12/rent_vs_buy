@@ -45,31 +45,32 @@ def validate_value(low, high, given, mem_type, default):
         return val
 
 inputs = [
-            [ "home_val",    "Home Value:"                            , "750000" , 100000 , 1000000 ,  1  ] ,
-            [ "how_long",    "How long do you plan to hold the home:" , "30"     ,      2 ,     100 ,  1  ] ,
-            [ "mort_per",    "Morgage percent:"                       , "4.0"    ,    1.0 ,    25.0 ,  0  ] ,
-            [ "down_pay",    "Down Payment %:"                        , "10"     ,      1 ,     100 ,  1  ] ,
-            [ "mort_term",   "Mortgage Term:"                         , "30"     ,      2 ,      40 ,  1  ] ,
-            [ "price_appr",  "Price Appreciation %:"                  , "4.0"    ,    1.0 ,    25.0 ,  0  ] ,
-            [ "rent_appr",   "Rent Appreciation%:"                    , "4.5"    ,    1.0 ,    25.0 ,  0  ] ,
-            [ "inflation",   "Inflation %:"                           , "3.0"    ,    1.0 ,    25.0 ,  0  ] ,
-            [ "inv_rate",    "Investment Rate%:"                      , "8.0"    ,    1.0 ,    25.0 ,  0  ] ,
-            [ "prop_tax",    "Property Tax%:"                         , "0.8"    ,    0.1 ,    10.0 ,  0  ] ,
-            [ "joint",       "Joint:"                                 , "yes"    ,   "yes",    "no" ,  2  ] ,
-            [ "marg_rate",   "Marginal Rate%:"                        , "25"     ,      0 ,    25.0 ,  0  ] ,
-            [ "buy_loss",    "Buying loss%:"                          , "1.5"    ,      0 ,    25.0 ,  0  ] ,
-            [ "sell_loss",   "Selling loss%:"                         , "6"      ,      0 ,    25.0 ,  0  ] ,
-            [ "maint",       "Maintenance:"                           , "1"      ,    0.1 ,    10.0 ,  0  ] ,
-            [ "own_ins",     "Owner Insurance:"                       , "0.46"   ,    0.1 ,    10.0 ,  0  ] ,
-            [ "month_comm",  "Monthly Common:"                        , "500"    ,      0 ,    5000 ,  1  ] ,
-            [ "rent_ins",    "Renter Insurane:"                       , "0.5"    ,    0.1 ,    10.0 ,  0  ] ,
+            [ "home_val",    "Home Value"                            , "750000" , 100000 , 1000000 ,  1  ] ,
+            [ "how_long",    "How long do you plan to hold the home" , "30"     ,      2 ,     100 ,  1  ] ,
+            [ "mort_per",    "Morgage percent"                       , "4.0"    ,    1.0 ,    25.0 ,  0  ] ,
+            [ "down_pay",    "Down Payment %"                        , "10"     ,      1 ,     100 ,  1  ] ,
+            [ "mort_term",   "Mortgage Term"                         , "30"     ,      2 ,      40 ,  1  ] ,
+            [ "price_appr",  "Price Appreciation %"                  , "4.0"    ,    1.0 ,    25.0 ,  0  ] ,
+            [ "rent_appr",   "Rent Appreciation%"                    , "4.5"    ,    1.0 ,    25.0 ,  0  ] ,
+            [ "inflation",   "Inflation %"                           , "3.0"    ,    1.0 ,    25.0 ,  0  ] ,
+            [ "inv_rate",    "Investment Rate%"                      , "8.0"    ,    1.0 ,    25.0 ,  0  ] ,
+            [ "prop_tax",    "Property Tax%"                         , "0.8"    ,    0.1 ,    10.0 ,  0  ] ,
+            [ "joint",       "Joint"                                 , "yes"    ,   "yes",    "no" ,  2  ] ,
+            [ "marg_rate",   "Marginal Rate%"                        , "25"     ,      0 ,    25.0 ,  0  ] ,
+            [ "buy_loss",    "Buying loss%"                          , "1.5"    ,      0 ,    25.0 ,  0  ] ,
+            [ "sell_loss",   "Selling loss%"                         , "6"      ,      0 ,    25.0 ,  0  ] ,
+            [ "maint",       "Maintenance"                           , "1"      ,    0.1 ,    10.0 ,  0  ] ,
+            [ "own_ins",     "Owner Insurance"                       , "0.46"   ,    0.1 ,    10.0 ,  0  ] ,
+            [ "month_comm",  "Monthly Common"                        , "500"    ,      0 ,    5000 ,  1  ] ,
+            [ "rent_ins",    "Renter Insurane"                       , "0.5"    ,    0.1 ,    10.0 ,  0  ] ,
         ]
 
 def parse_command_line_inputs():
 
     parser = argparse.ArgumentParser()
     for i in inputs:
-        parser.add_argument("--" + i[0], dest=i[0], help=i[1], default=i[2])
+        option = "--" + i[0]
+        parser.add_argument(option, dest=i[0], help=i[1], default=i[2])
     parser.add_argument("--nopretty", action="store_true")
     parser.add_argument("-l", "--log_level", type=int)
 
