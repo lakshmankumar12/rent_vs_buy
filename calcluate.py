@@ -9,6 +9,8 @@ import math
 from datetime import date
 import numpy
 import locale
+import argparse
+import sys
 
 def fl_fmt(f):
     try:
@@ -57,27 +59,28 @@ def validate_value(low, high, given, mem_type, default):
     else:
         return val
 
+inputs = [
+            [ "home_val",    "Home Value:"                            , "750000" , 100000 , 1000000 ,  1  ] ,
+            [ "how_long",    "How long do you plan to hold the home:" , "30"     ,      2 ,     100 ,  1  ] ,
+            [ "mort_per",    "Morgage percent:"                       , "3.67"   ,    1.0 ,    25.0 ,  0  ] ,
+            [ "down_pay",    "Down Payment %:"                        , "10"     ,      1 ,     100 ,  1  ] ,
+            [ "mort_term",   "Mortgage Term:"                         , "30"     ,      2 ,      40 ,  1  ] ,
+            [ "price_appr",  "Price Appreciation %:"                  , "4.0"    ,    1.0 ,    25.0 ,  0  ] ,
+            [ "rent_appr",   "Rent Appreciation%:"                    , "5.0"    ,    1.0 ,    25.0 ,  0  ] ,
+            [ "inflation",   "Inflation %:"                           , "3.0"    ,    1.0 ,    25.0 ,  0  ] ,
+            [ "inv_rate",    "Investment Rate%:"                      , "8.0"    ,    1.0 ,    25.0 ,  0  ] ,
+            [ "prop_tax",    "Property Tax%:"                         , "0.8"    ,    0.1 ,    10.0 ,  0  ] ,
+            [ "joint",       "Joint:"                                 , "yes"    ,   "yes",    "no" ,  2  ] ,
+            [ "marg_rate",   "Marginal Rate%:"                        , "25"     ,      0 ,    25.0 ,  0  ] ,
+            [ "buy_loss",    "Buying loss%:"                          , "1.5"    ,      0 ,    25.0 ,  0  ] ,
+            [ "sell_loss",   "Selling loss%:"                         , "6"      ,      0 ,    25.0 ,  0  ] ,
+            [ "maint",       "Maintenance:"                           , "1"      ,    0.1 ,    10.0 ,  0  ] ,
+            [ "own_ins",     "Owner Insurance:"                       , "0.46"   ,    0.1 ,    10.0 ,  0  ] ,
+            [ "month_comm",  "Monthly Common:"                        , "500"    ,      0 ,    5000 ,  1  ] ,
+            [ "rent_ins",    "Renter Insurane:"                       , "0.5"    ,    0.1 ,    10.0 ,  0  ] ,
+        ]
+
 def ask_inputs():
-    inputs = [
-                [ "home_val",    "Home Value:"                            , "750000" , 100000 , 1000000 ,  1  ] ,
-                [ "how_long",    "How long do you plan to hold the home:" , "30"     ,      2 ,     100 ,  1  ] ,
-                [ "mort_per",    "Morgage percent:"                       , "3.67"   ,    1.0 ,    25.0 ,  0  ] ,
-                [ "down_pay",    "Down Payment %:"                        , "10"     ,      1 ,     100 ,  1  ] ,
-                [ "mort_term",   "Mortgage Term:"                         , "30"     ,      2 ,      40 ,  1  ] ,
-                [ "price_appr",  "Price Appreciation %:"                  , "4.0"    ,    1.0 ,    25.0 ,  0  ] ,
-                [ "rent_appr",   "Rent Appreciation%:"                    , "5.0"    ,    1.0 ,    25.0 ,  0  ] ,
-                [ "inflation",   "Inflation %:"                           , "3.0"    ,    1.0 ,    25.0 ,  0  ] ,
-                [ "inv_rate",    "Investment Rate%:"                      , "8.0"    ,    1.0 ,    25.0 ,  0  ] ,
-                [ "prop_tax",    "Property Tax%:"                         , "0.8"    ,    0.1 ,    10.0 ,  0  ] ,
-                [ "joint",       "Joint:"                                 , "yes"    ,   "yes",    "no" ,  2  ] ,
-                [ "marg_rate",   "Marginal Rate%:"                        , "25"     ,      0 ,    25.0 ,  0  ] ,
-                [ "buy_loss",    "Buying loss%:"                          , "1.5"    ,      0 ,    25.0 ,  0  ] ,
-                [ "sell_loss",   "Selling loss%:"                         , "6"      ,      0 ,    25.0 ,  0  ] ,
-                [ "maint",       "Maintenance:"                           , "1"      ,    0.1 ,    10.0 ,  0  ] ,
-                [ "own_ins",     "Owner Insurance:"                       , "0.46"   ,    0.1 ,    10.0 ,  0  ] ,
-                [ "month_comm",  "Monthly Common:"                        , "500"    ,      0 ,    5000 ,  1  ] ,
-                [ "rent_ins",    "Renter Insurane:"                       , "0.5"    ,    0.1 ,    10.0 ,  0  ] ,
-            ]
     given_inputs = {}
     for i in inputs:
         mem_name = i[0]
@@ -90,6 +93,34 @@ def ask_inputs():
         value  = validate_value(low, high, given, mem_type, def_val)
         given_inputs[mem_name] = value
     return given_inputs
+
+def parse_command_line_inputs():
+
+    parser = argparse.ArgumentParser()
+    for i in inputs:
+        parser.add_argument("--" + i[0], dest=i[0], help=i[1], default=i[2])
+
+    parsed_args = parser.parse_args()
+    failed = False
+    given_inputs = {}
+    for i in inputs:
+        if not hasattr(parsed_args,i[0]):
+            print("Supply input: %s"%i[0])
+            failed = True
+        else:
+            given = getattr(parsed_args,i[0])
+            def_val = i[2]
+            low = i[3]
+            high = i[4]
+            mem_type = i[5]
+            value  = validate_value(low, high, given, mem_type, def_val)
+            given_inputs[i[0]] = value
+
+    if failed:
+        sys.exit(1)
+
+    return given_inputs
+
 
 def compound_interest(p,n,r):
     '''
@@ -190,15 +221,15 @@ def get_a_renter_oppurtunity_cost(rent_guess, how_long, rent_appr, rent_ins):
 
 
 
-inp = ask_inputs()
+inp = parse_command_line_inputs()
 print("got inputs\n%s"%inp)
 
 #Find value of home at end of period
 value_at_end = compound_interest(inp['home_val'], inp['how_long'], inp['price_appr'])
-print("Home value at end of %d years is %s"%(inp['how_long'], fl_fmt(value_at_end)))
+#print("Home value at end of %d years is %s"%(inp['how_long'], fl_fmt(value_at_end)))
 
 sale_loss = value_at_end * (inp['sell_loss']/100.0)
-print("Sale-loss:%s"%(fl_fmt(sale_loss)))
+#print("Sale-loss:%s"%(fl_fmt(sale_loss)))
 value_at_end -= sale_loss
 
 gains = value_at_end - inp['home_val']
@@ -210,7 +241,7 @@ if inp['how_long'] > 3:
     gains -= deduct
     if gains:
         gains_loss = gains / inp['marg_rate']
-        print("Cap-Gains Loss:%s"%(fl_fmt(gains_loss)))
+        #print("Cap-Gains Loss:%s"%(fl_fmt(gains_loss)))
         value_at_end -= gains_loss
 
 
@@ -225,7 +256,7 @@ no_mortgage_months    = inp['mort_term'] * 12
 downpay_value         = inp['home_val'] * (inp['down_pay']/100.0)
 mortgage_value        = (inp['home_val'] - downpay_value) * -1
 mortgate_pmt          = numpy.pmt(monthly_mortgage_rate, no_mortgage_months, mortgage_value)
-print("Mortgage value is %s"%fl_fmt(mortgate_pmt))
+#print("Mortgage value is %s"%fl_fmt(mortgate_pmt))
 
 tax_exception  = 9300
 if inp['joint'] == "yes":
@@ -247,14 +278,14 @@ for i in range(inp['how_long']):
     buyer_oppur_cost += compound_interest(exp, years_left, inp['inv_rate'])
 
 
-print("Buyer situation:")
+#print("Buyer situation:")
 for i in range(inp['how_long']):
     if (i < inp['mort_term']):
         mort_val = mortgate_pmt * 12
     else:
         mort_val = 0.0
-    print("year %d,  property_taxes: %s maintenances: %s monthly_common_expenses: %s  mortgage: %s net_yearly: %s"%(
-                i,fl_fmt(property_taxes[i][1]),fl_fmt(maintenances[i][1]),fl_fmt(monthly_common_expenses[i][1]),fl_fmt(mort_val), fl_fmt(buyer_year_expense[i])))
+    #print("year %d,  property_taxes: %s maintenances: %s monthly_common_expenses: %s  mortgage: %s net_yearly: %s"%(
+                #i,fl_fmt(property_taxes[i][1]),fl_fmt(maintenances[i][1]),fl_fmt(monthly_common_expenses[i][1]),fl_fmt(mort_val), fl_fmt(buyer_year_expense[i])))
 
 
 buy_loss = inp['home_val'] * (inp['buy_loss']/100.0)
