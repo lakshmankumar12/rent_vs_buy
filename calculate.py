@@ -3,9 +3,7 @@
 from __future__ import print_function
 
 import os
-import atexit
 import math
-from datetime import date
 import numpy
 import locale
 import argparse
@@ -61,7 +59,7 @@ inputs = [
             [ "sell_loss",   "Selling loss%"                         , "6"      ,      0 ,    25.0 ,  0  ] ,
             [ "maint",       "Maintenance"                           , "1"      ,    0.1 ,    10.0 ,  0  ] ,
             [ "own_ins",     "Owner Insurance"                       , "0.46"   ,    0.1 ,    10.0 ,  0  ] ,
-            [ "month_comm",  "Monthly Common"                        , "500"    ,      0 ,    5000 ,  1  ] ,
+            [ "month_comm",  "Monthly Common"                        , "250"    ,      0 ,    5000 ,  1  ] ,
             [ "rent_ins",    "Renter Insurane"                       , "0.5"    ,    0.1 ,    10.0 ,  0  ] ,
         ]
 
@@ -112,47 +110,32 @@ def compound_interest(p,n,r):
     rr = r/100.0
     return p * math.pow((1+rr), n)
 
-def add_years(d, years):
-    """
-    Source: https://stackoverflow.com/a/15743908/2587153
-
-    Add goddamn years to a date, taking care of Feb-29!
-    """
-    try:
-        return d.replace(year = d.year + years)
-    except ValueError:
-        return d + (date(d.year + years, 1, 1) - date(d.year, 1, 1))
-
 def extrapolate_values(initial, years, rate):
     '''
         Given an initial value, and years and rate_of_increase, return
-            years lenth list of (date, value)s at end of each year.
+            years lenth list of values at end of each year.
     '''
     val_i = initial
-    date_i = date.today()
     rr = rate/100.0
     result = []
     for i in range(years):
         val_i = val_i * ( 1 + rr)
-        date_i = add_years(date_i,1)
-        result.append((date_i,val_i))
+        result.append(val_i)
     return result
 
 def extrapolate_values_on_a_base(base, base_inc_rate, years, rate_on_base):
     '''
-        Return list of (date, value) for n next years. (Result in years len long)
+        Return list of values for n next years. (Result in years len long)
         That is, at end of each year, we have a value derived such that its is rate_on_base, where base is increasing at base_inc_rate.
     '''
     base_i = base
-    date_i = date.today()
     rr = base_inc_rate/100.0
     vr = rate_on_base/100.0
     result = []
     for i in range(years):
-        date_i = add_years(date_i,1)
         base_i = base_i * (1 + rr)
         value_i = base_i * vr
-        result.append((date_i, value_i))
+        result.append(value_i)
     return result
 
 def principal_remaining_after(p, n, r, rem_years):
@@ -174,7 +157,7 @@ def get_a_renter_oppurtunity_cost(rent_guess, how_long, rent_appr, rent_ins):
     renter_oppurtunity_cost = 0.0
     renter_year_expense = []
     for i in range(inp['how_long']):
-        renter_exp_for_this_year = rental_values[i][1] + renter_insur[i][1]
+        renter_exp_for_this_year = rental_values[i] + renter_insur[i]
         renter_year_expense.append(renter_exp_for_this_year)
         years_left = inp['how_long'] - i
         renter_oppurtunity_cost += compound_interest(renter_exp_for_this_year, years_left, inp['inv_rate'])
@@ -183,7 +166,7 @@ def get_a_renter_oppurtunity_cost(rent_guess, how_long, rent_appr, rent_ins):
     if set_verbose_level >= 5:
         for i in range(inp['how_long']):
             log_print(5,"year %d,  rent: %s rent_insur: %s net_yearly: %s",
-                    (i,fl_fmt(rental_values[i][1]),fl_fmt(renter_insur[i][1]), fl_fmt(renter_year_expense[i])))
+                    (i,fl_fmt(rental_values[i]),fl_fmt(renter_insur[i]), fl_fmt(renter_year_expense[i])))
 
     log_print(5, "oppurtunity_cost_for_renter at guess_rent:%s is: %s",
                     (fl_fmt(rent_guess),fl_fmt(renter_oppurtunity_cost)))
@@ -242,10 +225,10 @@ if inp['joint'] == "yes":
 buyer_year_expense = []
 buyer_oppur_cost = 0.0
 for i in range(inp['how_long']):
-    exp = maintenances[i][1]
-    exp += monthly_common_expenses[i][1]
-    exp += owner_insur[i][1]
-    mort_plus_prop = property_taxes[i][1] + mortgate_pmt * 12
+    exp = maintenances[i]
+    exp += monthly_common_expenses[i]
+    exp += owner_insur[i]
+    mort_plus_prop = property_taxes[i] + mortgate_pmt * 12
     exp += mort_plus_prop
     if mort_plus_prop > tax_exception:
         tax_save = (mort_plus_prop - tax_exception) * (inp['marg_rate']/100.0)
@@ -262,7 +245,7 @@ for i in range(inp['how_long']):
     else:
         mort_val = 0.0
     log_print(4,"year %d,  property_taxes: %s maintenances: %s monthly_common_expenses: %s  mortgage: %s net_yearly: %s",
-                    (i,fl_fmt(property_taxes[i][1]),fl_fmt(maintenances[i][1]),fl_fmt(monthly_common_expenses[i][1]),fl_fmt(mort_val), fl_fmt(buyer_year_expense[i])))
+                    (i,fl_fmt(property_taxes[i]),fl_fmt(maintenances[i]),fl_fmt(monthly_common_expenses[i]),fl_fmt(mort_val), fl_fmt(buyer_year_expense[i])))
 
 
 buy_loss = inp['home_val'] * (inp['buy_loss']/100.0)
