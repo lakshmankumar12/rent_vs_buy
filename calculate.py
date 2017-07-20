@@ -11,10 +11,12 @@ import locale
 import argparse
 import sys
 
+pretty = True
+
 def fl_fmt(f):
     try:
         locale.setlocale(locale.LC_ALL, 'en_US.utf8')
-        return locale.format("%.2f",f,grouping=True)
+        return locale.format("%.2f",f,grouping=pretty)
     except:
         return "%.2f"%f
 
@@ -40,11 +42,11 @@ def validate_value(low, high, given, mem_type, default):
 inputs = [
             [ "home_val",    "Home Value:"                            , "750000" , 100000 , 1000000 ,  1  ] ,
             [ "how_long",    "How long do you plan to hold the home:" , "30"     ,      2 ,     100 ,  1  ] ,
-            [ "mort_per",    "Morgage percent:"                       , "3.67"   ,    1.0 ,    25.0 ,  0  ] ,
+            [ "mort_per",    "Morgage percent:"                       , "4.0"    ,    1.0 ,    25.0 ,  0  ] ,
             [ "down_pay",    "Down Payment %:"                        , "10"     ,      1 ,     100 ,  1  ] ,
             [ "mort_term",   "Mortgage Term:"                         , "30"     ,      2 ,      40 ,  1  ] ,
             [ "price_appr",  "Price Appreciation %:"                  , "4.0"    ,    1.0 ,    25.0 ,  0  ] ,
-            [ "rent_appr",   "Rent Appreciation%:"                    , "5.0"    ,    1.0 ,    25.0 ,  0  ] ,
+            [ "rent_appr",   "Rent Appreciation%:"                    , "4.5"    ,    1.0 ,    25.0 ,  0  ] ,
             [ "inflation",   "Inflation %:"                           , "3.0"    ,    1.0 ,    25.0 ,  0  ] ,
             [ "inv_rate",    "Investment Rate%:"                      , "8.0"    ,    1.0 ,    25.0 ,  0  ] ,
             [ "prop_tax",    "Property Tax%:"                         , "0.8"    ,    0.1 ,    10.0 ,  0  ] ,
@@ -63,6 +65,7 @@ def parse_command_line_inputs():
     parser = argparse.ArgumentParser()
     for i in inputs:
         parser.add_argument("--" + i[0], dest=i[0], help=i[1], default=i[2])
+    parser.add_argument("--nopretty", action="store_true")
 
     parsed_args = parser.parse_args()
     failed = False
@@ -82,6 +85,10 @@ def parse_command_line_inputs():
 
     if failed:
         sys.exit(1)
+
+    global pretty
+    if parsed_args.nopretty:
+        pretty = False;
 
     return given_inputs
 
@@ -136,6 +143,18 @@ def extrapolate_values_on_a_base(base, base_inc_rate, years, rate_on_base):
         result.append((date_i, value_i))
     return result
 
+def principal_remaining_after(p, n, r, rem_years):
+    rr = r / 1200.0
+    nn = n*12
+    rem_mths = rem_years * 12
+    paid_mths = nn - rem_mths
+    paid_prin = 0.0
+    for i in range(1,paid_mths+1):
+        pp = numpy.ppmt(rr, i, nn, p)
+        paid_prin += pp
+    return (p*-1) - paid_prin
+
+
 def get_a_renter_oppurtunity_cost(rent_guess, how_long, rent_appr, rent_ins):
     rental_values = extrapolate_values(rent_guess*12,how_long,rent_appr)
     renter_insur =  extrapolate_values_on_a_base(rent_guess*12, rent_appr,how_long,rent_ins)
@@ -177,10 +196,23 @@ if inp['how_long'] > 3:
     else:
         deduct = 250000
     gains -= deduct
-    if gains:
+    if gains > 0:
         gains_loss = gains / inp['marg_rate']
         #print("Cap-Gains Loss:%s"%(fl_fmt(gains_loss)))
         value_at_end -= gains_loss
+
+monthly_mortgage_rate = inp['mort_per'] / 1200.0
+no_mortgage_months    = inp['mort_term'] * 12
+downpay_value         = inp['home_val'] * (inp['down_pay']/100.0)
+mortgage_value        = (inp['home_val'] - downpay_value) * -1
+mortgate_pmt          = numpy.pmt(monthly_mortgage_rate, no_mortgage_months, mortgage_value)
+#print("Mortgage value is %s"%fl_fmt(mortgate_pmt))
+
+if inp['how_long'] < inp['mort_term']:
+    rem = inp['mort_term'] - inp['how_long']
+    rem_prin = principal_remaining_after(mortgage_value, inp['mort_term'], inp['mort_per'], rem)
+    #print("Remaining Principal to Pay:%s"%(fl_fmt(rem_prin)))
+    value_at_end -= rem_prin
 
 
 property_taxes = extrapolate_values_on_a_base(inp['home_val'],inp['price_appr'],inp['how_long'],inp['prop_tax'])
@@ -189,12 +221,6 @@ owner_insur    = extrapolate_values_on_a_base(inp['home_val'],inp['price_appr'],
 monthly_initial = inp['month_comm'] * 12
 monthly_common_expenses = extrapolate_values(monthly_initial, inp['how_long'], inp['inflation'])
 
-monthly_mortgage_rate = inp['mort_per'] / 1200.0
-no_mortgage_months    = inp['mort_term'] * 12
-downpay_value         = inp['home_val'] * (inp['down_pay']/100.0)
-mortgage_value        = (inp['home_val'] - downpay_value) * -1
-mortgate_pmt          = numpy.pmt(monthly_mortgage_rate, no_mortgage_months, mortgage_value)
-#print("Mortgage value is %s"%fl_fmt(mortgate_pmt))
 
 tax_exception  = 9300
 if inp['joint'] == "yes":
