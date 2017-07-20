@@ -3,7 +3,6 @@
 from __future__ import print_function
 
 import os
-import readline
 import atexit
 import math
 from datetime import date
@@ -18,27 +17,6 @@ def fl_fmt(f):
         return locale.format("%.2f",f,grouping=True)
     except:
         return "%.2f"%f
-
-def rlinput(prompt, prefill=''):
-    '''
-        Use readline and get user input
-    '''
-    readline.set_startup_hook(lambda: readline.insert_text(prefill))
-    try:
-        return raw_input(prompt)
-    finally:
-        readline.set_startup_hook()
-
-historyPath = os.path.expanduser("~/.rent_buy_calc_history")
-
-def save_history(historyPath=historyPath):
-    import readline
-    readline.write_history_file(historyPath)
-
-if os.path.exists(historyPath):
-    readline.read_history_file(historyPath)
-
-atexit.register(save_history)
 
 def validate_value(low, high, given, mem_type, default):
     '''
@@ -79,20 +57,6 @@ inputs = [
             [ "month_comm",  "Monthly Common:"                        , "500"    ,      0 ,    5000 ,  1  ] ,
             [ "rent_ins",    "Renter Insurane:"                       , "0.5"    ,    0.1 ,    10.0 ,  0  ] ,
         ]
-
-def ask_inputs():
-    given_inputs = {}
-    for i in inputs:
-        mem_name = i[0]
-        mem_str = i[1]
-        def_val = i[2]
-        low = i[3]
-        high = i[4]
-        mem_type = i[5]
-        given=rlinput(mem_str, def_val)
-        value  = validate_value(low, high, given, mem_type, def_val)
-        given_inputs[mem_name] = value
-    return given_inputs
 
 def parse_command_line_inputs():
 
