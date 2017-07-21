@@ -34,7 +34,7 @@ class Fl_fmt:
         if Fl_fmt.locale_avail:
             return locale.format("%.2f",self.f,grouping=pretty)
         else:
-            return "%.2f"%f
+            return "%.2f"%self.f
 
 def validate_value(low, high, given, mem_type, default):
     '''
@@ -205,10 +205,10 @@ if inp['how_long'] > 3:
     else:
         deduct = 250000
     gains -= deduct
-    if gains > 0:
-        gains_loss = gains / inp['marg_rate']
-        log_print(3,"Cap-Gains Loss:%s",(Fl_fmt(gains_loss)))
-        value_at_end -= gains_loss
+if gains > 0:
+    gains_loss = gains * (inp['marg_rate']/100.0)
+    log_print(3,"Cap-Gains Loss:%s",(Fl_fmt(gains_loss)))
+    value_at_end -= gains_loss
 
 monthly_mortgage_rate = inp['mort_per'] / 1200.0
 no_mortgage_months    = inp['mort_term'] * 12

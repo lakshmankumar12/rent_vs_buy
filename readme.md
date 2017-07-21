@@ -30,7 +30,7 @@ Inputs
 'inflation': 3.0, 'price_appr': 4.0, 'buy_loss': 1.5, 'rent_appr': 4.5,
 'marg_rate': 25.0, 'how_long': 30}
 Start renting if rent value is less than:
-2,452.31
+2,540.92
 $
 ```
 
@@ -42,14 +42,14 @@ $ for i in $(seq 100000 100000 1000000 ); do \
         echo "Breakeven Rent for $i is $rent" ; done
 Breakeven Rent for 100000 is 563.37
 Breakeven Rent for 200000 is 914.05
-Breakeven Rent for 300000 is 1194.63
-Breakeven Rent for 400000 is 1474.11
-Breakeven Rent for 500000 is 1753.60
-Breakeven Rent for 600000 is 2033.08
-Breakeven Rent for 700000 is 2312.57
-Breakeven Rent for 800000 is 2592.05
-Breakeven Rent for 900000 is 2871.54
-Breakeven Rent for 1000000 is 3151.03
+Breakeven Rent for 300000 is 1204.43
+Breakeven Rent for 400000 is 1501.43
+Breakeven Rent for 500000 is 1798.42
+Breakeven Rent for 600000 is 2095.42
+Breakeven Rent for 700000 is 2392.42
+Breakeven Rent for 800000 is 2689.42
+Breakeven Rent for 900000 is 2986.42
+Breakeven Rent for 1000000 is 3283.42
 $
 ```
 
