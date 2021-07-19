@@ -4,7 +4,7 @@ from __future__ import print_function
 
 import os
 import math
-import numpy
+import numpy_financial as npf
 import locale
 import argparse
 import sys
@@ -56,24 +56,25 @@ def validate_value(low, high, given, mem_type, default):
         return val
 
 inputs = [
-            [ "home_val",    "Home Value"                            , "750000" , 100000 , 1000000 ,  1  ] ,
-            [ "how_long",    "How long do you plan to hold the home" , "30"     ,      2 ,     100 ,  1  ] ,
-            [ "mort_per",    "Morgage percent"                       , "4.0"    ,    1.0 ,    25.0 ,  0  ] ,
-            [ "down_pay",    "Down Payment %"                        , "10"     ,      1 ,     100 ,  1  ] ,
+            [ "home_val",    "Home Value"                            , "300000" , 100000 , 1000000 ,  1  ] ,
+            [ "how_long",    "How long do you plan to hold the home" , "20"     ,      2 ,     100 ,  1  ] ,
+            [ "mort_per",    "Mortgage percent"                      , "3"    ,    1.0 ,    25.0 ,  0  ] ,
+            [ "down_pay",    "Down Payment %"                        , "0"     ,      1 ,     100 ,  1  ] ,
+            [ "mort_ins",    "Mortgage insurance %"                  , "0.5"     ,      0.3 ,    1.2 ,  0  ] ,
             [ "mort_term",   "Mortgage Term"                         , "30"     ,      2 ,      40 ,  1  ] ,
-            [ "price_appr",  "Price Appreciation %"                  , "4.0"    ,    1.0 ,    25.0 ,  0  ] ,
+            [ "price_appr",  "Price Appreciation %"                  , "6.0"    ,    1.0 ,    25.0 ,  0  ] ,
             [ "rent_appr",   "Rent Appreciation%"                    , "4.5"    ,    1.0 ,    25.0 ,  0  ] ,
-            [ "inflation",   "Inflation %"                           , "3.0"    ,    1.0 ,    25.0 ,  0  ] ,
-            [ "inv_rate",    "Investment Rate%"                      , "8.0"    ,    1.0 ,    25.0 ,  0  ] ,
-            [ "prop_tax",    "Property Tax%"                         , "0.8"    ,    0.1 ,    10.0 ,  0  ] ,
+            [ "inflation",   "Inflation %"                           , "4.2"    ,    1.0 ,    25.0 ,  0  ] ,
+            [ "inv_rate",    "Investment Rate%"                      , "12.0"    ,    1.0 ,    25.0 ,  0  ] ,
+            [ "prop_tax",    "Property Tax%"                         , "1.1"    ,    0.1 ,    10.0 ,  0  ] ,
             [ "joint",       "Joint"                                 , "yes"    ,   "yes",    "no" ,  2  ] ,
-            [ "marg_rate",   "Marginal Rate%"                        , "25"     ,      0 ,    25.0 ,  0  ] ,
+            [ "marg_rate",   "Marginal Rate%"                        , "22"     ,      0 ,    25.0 ,  0  ] ,
             [ "buy_loss",    "Buying loss%"                          , "1.5"    ,      0 ,    25.0 ,  0  ] ,
             [ "sell_loss",   "Selling loss%"                         , "6"      ,      0 ,    25.0 ,  0  ] ,
-            [ "maint",       "Maintenance"                           , "1"      ,    0.1 ,    10.0 ,  0  ] ,
+            [ "maint",       "Maintenance"                           , ".5"      ,    0.1 ,    10.0 ,  0  ] ,
             [ "own_ins",     "Owner Insurance"                       , "0.46"   ,    0.1 ,    10.0 ,  0  ] ,
             [ "month_comm",  "Monthly Common"                        , "250"    ,      0 ,    5000 ,  1  ] ,
-            [ "rent_ins",    "Renter Insurane"                       , "0.5"    ,    0.1 ,    10.0 ,  0  ] ,
+            [ "rent_ins",    "Renter Insurance"                      , "0.5"    ,    0.1 ,    10.0 ,  0  ] ,
         ]
 
 def parse_command_line_inputs():
@@ -158,7 +159,7 @@ def principal_remaining_after(p, n, r, rem_years):
     paid_mths = nn - rem_mths
     paid_prin = 0.0
     for i in range(1,paid_mths+1):
-        pp = numpy.ppmt(rr, i, nn, p)
+        pp = npf.ppmt(rr, i, nn, p)
         paid_prin += pp
     return (p*-1) - paid_prin
 
@@ -210,11 +211,14 @@ if gains > 0:
     log_print(3,"Cap-Gains Loss:%s",(Fl_fmt(gains_loss)))
     value_at_end -= gains_loss
 
+if inp['down_pay'] < 20:
+    inp['mort_per'] += inp['mort_ins']
+
 monthly_mortgage_rate = inp['mort_per'] / 1200.0
 no_mortgage_months    = inp['mort_term'] * 12
 downpay_value         = inp['home_val'] * (inp['down_pay']/100.0)
 mortgage_value        = (inp['home_val'] - downpay_value) * -1
-mortgate_pmt          = numpy.pmt(monthly_mortgage_rate, no_mortgage_months, mortgage_value)
+mortgate_pmt          = npf.pmt(monthly_mortgage_rate, no_mortgage_months, mortgage_value)
 log_print(3,"Mortgage value is %s",Fl_fmt(mortgate_pmt))
 
 if inp['how_long'] < inp['mort_term']:
